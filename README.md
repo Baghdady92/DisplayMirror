@@ -21,7 +21,9 @@ Built and tested on a **Qualcomm Gen4 (SA8775p)** based Android Automotive 14 he
 
 ## Quick Install (Recommended)
 
-Connect your device via ADB and run:
+Connect your device via ADB and run the install script for your platform.
+
+### macOS / Linux
 
 ```bash
 curl -sL https://github.com/Baghdady92/DisplayMirror/releases/latest/download/install.sh -o install.sh
@@ -29,16 +31,24 @@ chmod +x install.sh
 ./install.sh
 ```
 
-This script will:
+### Windows
+
+```powershell
+curl -sL https://github.com/Baghdady92/DisplayMirror/releases/latest/download/install.bat -o install.bat
+install.bat
+```
+
+### What the script does
+
 1. Download the latest APK from GitHub Releases
 2. Install it on the connected device
 3. Grant all required permissions
 4. Push ADB keys for force-stop & split-screen
 5. Launch the app
 
-You can also specify a device serial: `./install.sh <serial>`
+You can also specify a device serial: `./install.sh <serial>` (or `install.bat <serial>` on Windows)
 
-> **Note:** Requires `adb` and `curl` on your computer. After initial setup, the app can update itself from GitHub — no PC needed.
+> **Note:** Requires `adb` and `curl` on your computer. The Windows script also uses PowerShell (included in Windows 10+) to parse the GitHub API response. After initial setup, the app can update itself from GitHub — no PC needed.
 
 ## Display Setup
 
@@ -352,7 +362,8 @@ adb shell am start -n com.example.displaymirror/.MainActivity
 DisplayMirror/
 ├── build.gradle                          # Project-level Gradle config
 ├── Makefile                              # Build, install, release automation
-├── install.sh                            # One-command install script for end users
+├── install.sh                            # One-command install script (macOS/Linux)
+├── install.bat                           # One-command install script (Windows)
 ├── settings.gradle
 ├── gradle.properties
 ├── gradle/wrapper/
