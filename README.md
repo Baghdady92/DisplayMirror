@@ -33,9 +33,18 @@ chmod +x install.sh
 
 ### Windows
 
-```powershell
+Open **Command Prompt** (cmd) — not PowerShell — and run:
+
+```cmd
 curl -sL https://github.com/Baghdady92/DisplayMirror/releases/latest/download/install.bat -o install.bat
 install.bat
+```
+
+Or in **PowerShell**:
+
+```powershell
+Invoke-WebRequest -Uri "https://github.com/Baghdady92/DisplayMirror/releases/latest/download/install.bat" -OutFile "install.bat"
+.\install.bat
 ```
 
 ### What the script does
