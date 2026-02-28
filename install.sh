@@ -79,18 +79,10 @@ ADBKEY="$HOME/.android/adbkey"
 ADBKEY_PUB="$HOME/.android/adbkey.pub"
 
 if [ -f "$ADBKEY" ] && [ -f "$ADBKEY_PUB" ]; then
-    cyan "==> Pushing ADB keys (for force-stop & split-screen)..."
+    cyan "==> Pushing ADB keys (app auto-imports on start)..."
     $ADB push "$ADBKEY" /data/local/tmp/adbkey
     $ADB push "$ADBKEY_PUB" /data/local/tmp/adbkey.pub
-    # run-as only works for debuggable builds; try it but don't fail
-    if $ADB shell "run-as $PACKAGE mkdir -p ./files" 2>/dev/null \
-       && $ADB shell "run-as $PACKAGE cp /data/local/tmp/adbkey ./files/adbkey" 2>/dev/null \
-       && $ADB shell "run-as $PACKAGE cp /data/local/tmp/adbkey.pub ./files/adbkey.pub" 2>/dev/null; then
-        green "    ADB keys installed."
-    else
-        green "    ADB keys pushed to /data/local/tmp/"
-        cyan  "    The app will pick them up from there on first launch."
-    fi
+    green "    ADB keys pushed."
 else
     red "    WARNING: ADB keys not found at $ADBKEY"
     red "    Force-stop and split-screen will not work without ADB keys."
