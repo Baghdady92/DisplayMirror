@@ -108,9 +108,15 @@ echo [32m    Installed.[0m
 REM ── Step 3: Grant permissions ────────────────────────────────────────
 
 echo [36m==^> Granting permissions...[0m
+REM Special permissions (appops)
 %ADB% shell appops set %PACKAGE% SYSTEM_ALERT_WINDOW allow
 %ADB% shell appops set %PACKAGE% PROJECT_MEDIA allow
 %ADB% shell appops set %PACKAGE% REQUEST_INSTALL_PACKAGES allow
+%ADB% shell appops set %PACKAGE% USE_FULL_SCREEN_INTENT allow >nul 2>&1
+REM Runtime permissions
+%ADB% shell pm grant %PACKAGE% android.permission.READ_EXTERNAL_STORAGE >nul 2>&1
+%ADB% shell pm grant %PACKAGE% android.permission.WRITE_EXTERNAL_STORAGE >nul 2>&1
+%ADB% shell pm grant %PACKAGE% android.permission.SYSTEM_ALERT_WINDOW >nul 2>&1
 echo [32m    Permissions granted.[0m
 
 echo [36m==^> Enabling auto-start on boot...[0m
