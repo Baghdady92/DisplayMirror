@@ -73,6 +73,13 @@ $ADB shell appops set $PACKAGE PROJECT_MEDIA allow
 $ADB shell appops set $PACKAGE REQUEST_INSTALL_PACKAGES allow
 green "    Permissions granted."
 
+cyan "==> Enabling auto-start on boot..."
+# Disable battery optimization so Android won't kill the app
+$ADB shell dumpsys deviceidle whitelist +$PACKAGE 2>/dev/null || true
+# Explicitly enable the boot receiver component
+$ADB shell pm enable $PACKAGE/.BootReceiver 2>/dev/null || true
+green "    Auto-start enabled."
+
 # ── Step 4: Push ADB keys ───────────────────────────────────────────
 
 ADBKEY="$HOME/.android/adbkey"
