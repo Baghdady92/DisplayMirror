@@ -68,9 +68,15 @@ green "    Installed."
 # ── Step 3: Grant permissions ────────────────────────────────────────
 
 cyan "==> Granting permissions..."
+# Special permissions (appops)
 $ADB shell appops set $PACKAGE SYSTEM_ALERT_WINDOW allow
 $ADB shell appops set $PACKAGE PROJECT_MEDIA allow
 $ADB shell appops set $PACKAGE REQUEST_INSTALL_PACKAGES allow
+$ADB shell appops set $PACKAGE USE_FULL_SCREEN_INTENT allow 2>/dev/null || true
+# Runtime permissions
+$ADB shell pm grant $PACKAGE android.permission.READ_EXTERNAL_STORAGE 2>/dev/null || true
+$ADB shell pm grant $PACKAGE android.permission.WRITE_EXTERNAL_STORAGE 2>/dev/null || true
+$ADB shell pm grant $PACKAGE android.permission.SYSTEM_ALERT_WINDOW 2>/dev/null || true
 green "    Permissions granted."
 
 cyan "==> Enabling auto-start on boot..."
