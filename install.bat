@@ -113,6 +113,11 @@ echo [36m==^> Granting permissions...[0m
 %ADB% shell appops set %PACKAGE% REQUEST_INSTALL_PACKAGES allow
 echo [32m    Permissions granted.[0m
 
+echo [36m==^> Enabling auto-start on boot...[0m
+%ADB% shell dumpsys deviceidle whitelist +%PACKAGE% >nul 2>&1
+%ADB% shell pm enable %PACKAGE%/.BootReceiver >nul 2>&1
+echo [32m    Auto-start enabled.[0m
+
 REM ── Step 4: Push ADB keys ───────────────────────────────────────────
 
 set "ADBKEY=%USERPROFILE%\.android\adbkey"
