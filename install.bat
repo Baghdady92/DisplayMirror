@@ -1,161 +1,160 @@
 @echo off
-setlocal enabledelayedexpansion
-REM
-REM  DisplayMirror — Quick Install Script (Windows)
-REM  https://github.com/Baghdady92/DisplayMirror
-REM
-REM  Downloads the latest release APK from GitHub, installs it on a connected
-REM  Android device, grants required permissions, and pushes ADB keys.
-REM
-REM  Usage:
-REM    install.bat              # auto-detect device
-REM    install.bat <serial>     # specify device serial
-REM
+setlocal EnableDelayedExpansion
 
-set "REPO=Baghdady92/DisplayMirror"
-set "PACKAGE=com.example.displaymirror"
-set "ACTIVITY=%PACKAGE%/.MainActivity"
-set "APK_NAME=DisplayMirror.apk"
+::
+:: DisplayMirror -- Quick Install Script (Windows)
+:: https://github.com/Baghdady92/DisplayMirror
+::
+:: Usage:
+::   install.bat            (auto-detect device)
+::   install.bat <serial>   (specify device serial)
+::
 
-REM ── Pre-checks ───────────────────────────────────────────────────────
+set REPO=Baghdady92/DisplayMirror
+set PACKAGE=com.example.displaymirror
+set ACTIVITY=%PACKAGE%/.MainActivity
+set APK_NAME=DisplayMirror.apk
+
+:: ── Pre-checks ───────────────────────────────────────────────────────
 
 where adb >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [33mADB not found. Downloading Android SDK Platform Tools...[0m
-    set "PT_ZIP=%TEMP%\platform-tools.zip"
-    set "PT_DIR=%USERPROFILE%\platform-tools"
-    curl -L -o "!PT_ZIP!" "https://dl.google.com/android/repository/platform-tools-latest-windows.zip"
-    if not exist "!PT_ZIP!" (
-        echo [31mERROR: Failed to download Platform Tools.[0m
-        exit /b 1
-    )
-    echo [36m==^> Extracting to !PT_DIR!...[0m
-    powershell -NoProfile -Command "Expand-Archive -Path '!PT_ZIP!' -DestinationPath '%USERPROFILE%' -Force"
-    del /f "!PT_ZIP!" >nul 2>&1
-    if not exist "!PT_DIR!\adb.exe" (
-        echo [31mERROR: Extraction failed. adb.exe not found in !PT_DIR![0m
-        exit /b 1
-    )
-    set "PATH=!PT_DIR!;!PATH!"
-    echo [32m    ADB installed to !PT_DIR![0m
-    echo [33m    To make permanent, add !PT_DIR! to your system PATH.[0m
+    echo [ERROR] adb not found. Install Android SDK Platform Tools and add to PATH.
+    exit /b 1
 )
-
 where curl >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [31mERROR: curl not found. Windows 10+ includes curl by default.[0m
+    echo [ERROR] curl not found. Available by default on Windows 10 1803+.
     exit /b 1
 )
 
-REM ── Device selection ────────────────────────────────────────────────
-
+:: Device selection
 if not "%~1"=="" (
-    set "DEVICE=%~1"
+    set DEVICE=%~1
 ) else (
-    for /f "skip=1 tokens=1,2" %%a in ('adb devices') do (
-        if "%%b"=="device" (
-            if not defined DEVICE set "DEVICE=%%a"
-        )
+    for /f "tokens=1" %%A in ('adb devices ^| findstr /r "device$"') do (
+        if not defined DEVICE set DEVICE=%%A
     )
 )
 
 if not defined DEVICE (
-    echo [31mERROR: No device connected. Connect a device and try again.[0m
+    echo [ERROR] No device connected. Connect a device and try again.
     exit /b 1
 )
 
-set "ADB=adb -s %DEVICE%"
-echo [1mDevice: %DEVICE%[0m
+set ADB=adb -s %DEVICE%
+echo [INFO] Device: %DEVICE%
 
-REM ── Step 1: Download latest release APK ──────────────────────────────
+:: ── Step 1: Download latest release APK ─────────────────────────────
 
-echo [36m==^> Fetching latest release from GitHub...[0m
+echo.
+echo ==^> Fetching latest release from GitHub...
 
-REM Use PowerShell to parse JSON and extract APK download URL
-for /f "delims=" %%u in ('powershell -NoProfile -Command ^
-    "$r = Invoke-RestMethod -Uri 'https://api.github.com/repos/%REPO%/releases/latest'; ^
-     $a = $r.assets | Where-Object { $_.name -like '*.apk' } | Select-Object -First 1; ^
-     if ($a) { $a.browser_download_url }"') do set "DOWNLOAD_URL=%%u"
+for /f "usebackq delims=" %%A in (`powershell -NoProfile -Command "try { (Invoke-RestMethod 'https://api.github.com/repos/%REPO%/releases/latest').assets | Where-Object { $_.name -like '*.apk' } | Select-Object -First 1 -ExpandProperty browser_download_url } catch { exit 1 }"`) do set DOWNLOAD_URL=%%A
 
 if not defined DOWNLOAD_URL (
-    echo [31mERROR: No APK found in latest release. Check %REPO% on GitHub.[0m
+    echo [ERROR] No APK found in latest release. Check %REPO% on GitHub.
     exit /b 1
 )
 
-REM Extract version from URL
-for /f "delims=" %%v in ('powershell -NoProfile -Command ^
-    "if ('%DOWNLOAD_URL%' -match 'v[\d]+\.[\d]+\.[\d]+') { $Matches[0] }"') do set "VERSION=%%v"
-
-echo [36m==^> Downloading %VERSION%...[0m
+echo ==^> Downloading APK...
 curl -L -o "%APK_NAME%" "%DOWNLOAD_URL%"
-
 if not exist "%APK_NAME%" (
-    echo [31mERROR: Download failed.[0m
+    echo [ERROR] Download failed.
     exit /b 1
 )
-echo [32m    Downloaded: %APK_NAME%[0m
+echo     Downloaded: %APK_NAME%
 
-REM ── Step 2: Install APK ─────────────────────────────────────────────
+:: ── Step 2: Install APK ──────────────────────────────────────────────
 
-echo [36m==^> Installing APK...[0m
+echo.
+echo ==^> Installing APK...
 %ADB% install -r "%APK_NAME%"
 if %errorlevel% neq 0 (
-    echo [31mERROR: APK installation failed.[0m
+    echo [ERROR] Installation failed.
+    del /f /q "%APK_NAME%" 2>nul
     exit /b 1
 )
-echo [32m    Installed.[0m
+echo     Installed.
 
-REM ── Step 3: Grant permissions ────────────────────────────────────────
+:: ── Step 3: Grant permissions ─────────────────────────────────────────
 
-echo [36m==^> Granting permissions...[0m
-REM Special permissions (appops)
+echo.
+echo ==^> Granting permissions...
+
 %ADB% shell appops set %PACKAGE% SYSTEM_ALERT_WINDOW allow
 %ADB% shell appops set %PACKAGE% PROJECT_MEDIA allow
 %ADB% shell appops set %PACKAGE% REQUEST_INSTALL_PACKAGES allow
-%ADB% shell appops set %PACKAGE% USE_FULL_SCREEN_INTENT allow >nul 2>&1
-REM Runtime permissions
-%ADB% shell pm grant %PACKAGE% android.permission.READ_EXTERNAL_STORAGE >nul 2>&1
-%ADB% shell pm grant %PACKAGE% android.permission.WRITE_EXTERNAL_STORAGE >nul 2>&1
-%ADB% shell pm grant %PACKAGE% android.permission.SYSTEM_ALERT_WINDOW >nul 2>&1
-echo [32m    Permissions granted.[0m
+%ADB% shell appops set %PACKAGE% USE_FULL_SCREEN_INTENT allow 2>nul
 
-echo [36m==^> Enabling auto-start on boot...[0m
-%ADB% shell dumpsys deviceidle whitelist +%PACKAGE% >nul 2>&1
-%ADB% shell pm enable %PACKAGE%/.BootReceiver >nul 2>&1
-echo [32m    Auto-start enabled.[0m
+%ADB% shell pm grant %PACKAGE% android.permission.READ_EXTERNAL_STORAGE 2>nul
+%ADB% shell pm grant %PACKAGE% android.permission.WRITE_EXTERNAL_STORAGE 2>nul
+%ADB% shell pm grant %PACKAGE% android.permission.SYSTEM_ALERT_WINDOW 2>nul
+%ADB% shell pm grant %PACKAGE% android.permission.ACCESS_FINE_LOCATION 2>nul
+%ADB% shell pm grant %PACKAGE% android.permission.ACCESS_COARSE_LOCATION 2>nul
+%ADB% shell pm grant %PACKAGE% android.permission.HIGH_SAMPLING_RATE_SENSORS 2>nul
 
-REM ── Step 4: Push ADB keys ───────────────────────────────────────────
+%ADB% shell pm grant %PACKAGE% android.car.permission.CAR_SPEED 2>nul
+%ADB% shell pm grant %PACKAGE% android.car.permission.CAR_ENERGY 2>nul
+%ADB% shell pm grant %PACKAGE% android.car.permission.CAR_ENGINE_DETAILED 2>nul
+%ADB% shell pm grant %PACKAGE% android.car.permission.CAR_POWERTRAIN 2>nul
+%ADB% shell pm grant %PACKAGE% android.car.permission.CAR_TIRES 2>nul
+%ADB% shell pm grant %PACKAGE% android.car.permission.CAR_INFO 2>nul
+%ADB% shell pm grant %PACKAGE% android.car.permission.CAR_EXTERIOR_ENVIRONMENT 2>nul
+%ADB% shell pm grant %PACKAGE% android.car.permission.CAR_MILEAGE 2>nul
+%ADB% shell pm grant %PACKAGE% android.car.permission.CAR_VENDOR_EXTENSION 2>nul
+%ADB% shell pm grant %PACKAGE% android.car.permission.CAR_DYNAMICS_STATE 2>nul
+%ADB% shell pm grant %PACKAGE% android.car.permission.CONTROL_CAR_CLIMATE 2>nul
+%ADB% shell pm grant %PACKAGE% android.car.permission.READ_CAR_DISPLAY_UNITS 2>nul
+%ADB% shell pm grant %PACKAGE% android.car.permission.CAR_DRIVING_STATE 2>nul
+echo     Permissions granted.
 
-set "ADBKEY=%USERPROFILE%\.android\adbkey"
-set "ADBKEY_PUB=%USERPROFILE%\.android\adbkey.pub"
+echo.
+echo ==^> Enabling auto-start on boot...
+%ADB% shell dumpsys deviceidle whitelist +%PACKAGE% 2>nul
+%ADB% shell pm enable %PACKAGE%/.BootReceiver 2>nul
+echo     Auto-start enabled.
 
-if exist "%ADBKEY%" if exist "%ADBKEY_PUB%" (
-    echo [36m==^> Pushing ADB keys ^(app auto-imports on start^)...[0m
-    %ADB% push "%ADBKEY%" /data/local/tmp/adbkey
-    %ADB% push "%ADBKEY_PUB%" /data/local/tmp/adbkey.pub
-    echo [32m    ADB keys pushed.[0m
+:: ── Step 4: Push ADB keys ────────────────────────────────────────────
+
+set ADBKEY=%USERPROFILE%\.android\adbkey
+set ADBKEY_PUB=%USERPROFILE%\.android\adbkey.pub
+
+echo.
+if exist "%ADBKEY%" (
+    if exist "%ADBKEY_PUB%" (
+        echo ==^> Pushing ADB keys ^(app auto-imports on start^)...
+        %ADB% push "%ADBKEY%" /data/local/tmp/adbkey
+        %ADB% push "%ADBKEY_PUB%" /data/local/tmp/adbkey.pub
+        echo     ADB keys pushed.
+    ) else (
+        goto :adbkey_missing
+    )
 ) else (
-    echo [31m    WARNING: ADB keys not found at %ADBKEY%[0m
-    echo [31m    Force-stop and split-screen will not work without ADB keys.[0m
-    echo [31m    Generate keys with: adb keygen %USERPROFILE%\.android\adbkey[0m
+    :adbkey_missing
+    echo [WARNING] ADB keys not found at %ADBKEY%
+    echo [WARNING] Force-stop and split-screen will not work without ADB keys.
+    echo [WARNING] Generate keys with: adb keygen %%USERPROFILE%%\.android\adbkey
 )
 
-REM ── Step 5: Launch ───────────────────────────────────────────────────
+:: ── Step 5: Launch ───────────────────────────────────────────────────
 
-echo [36m==^> Launching DisplayMirror...[0m
+echo.
+echo ==^> Launching DisplayMirror...
 %ADB% shell am start -n "%ACTIVITY%"
 
-REM ── Cleanup ──────────────────────────────────────────────────────────
+:: ── Cleanup ──────────────────────────────────────────────────────────
 
-del /f "%APK_NAME%" >nul 2>&1
+del /f /q "%APK_NAME%" 2>nul
 
 echo.
-echo [32m=== Setup complete! ===[0m
+echo === Setup complete! ===
 echo.
-echo [1mInstalled: DisplayMirror %VERSION%[0m
-echo [1mDevice:    %DEVICE%[0m
+echo Device: %DEVICE%
 echo.
 echo To update later, the app checks GitHub for new versions automatically.
 echo You can also re-run this script at any time.
+echo.
 
 endlocal
+pause
