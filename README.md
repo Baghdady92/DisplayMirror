@@ -1,3 +1,5 @@
+
+
 # DisplayMirror
 
 Android multi-display management app for Android Automotive systems. Mirrors the primary display to secondary displays, launches apps on any connected display, force-stops running apps, and provides a system-wide edge swipe gesture to open the app from anywhere.
@@ -239,7 +241,7 @@ adb shell am start -n com.example.displaymirror/.MainActivity
 4. **Split-screen:** Select "Split Left | Right" from Launch Mode, tap first app (left), tap second app (right) — both launch side-by-side
 5. **Force stop apps:** Tap a running app in the "Launched Apps" section, then "Force Stop"
 6. **Start mirroring:** Select a target display in the Screen Mirror card, tap "Start", approve capture
-7. **Edge swipe:** From any app, swipe right from the left-center edge of the screen to return to DisplayMirror
+7. **Edge swipe:** From any app, swipe right from the left edge of the screen to open DisplayMirror
 8. **Overlay button:** Enable from Permissions dialog — a floating circle appears for quick access
 9. **Update:** The app checks for updates on launch. You can also check manually from Permissions > "Check for Updates"
 
